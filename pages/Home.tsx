@@ -60,7 +60,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
 
         <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-3xl">
-            <h2 className="text-termo-yellow font-bold uppercase tracking-[0.2em] mb-4 animate-fade-in">Desde 1995</h2>
+            <h2 className="text-termo-yellow font-bold uppercase tracking-[0.2em] mb-4 animate-fade-in">Desde 1953</h2>
             <h1 className="text-5xl md:text-7xl font-display font-bold text-white leading-tight mb-8">
               EXCELÊNCIA EM <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">
