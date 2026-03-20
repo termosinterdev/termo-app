@@ -49,9 +49,9 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
     <div className="flex flex-col min-h-screen">
       <section className="relative h-[90vh] flex items-center bg-termo-dark overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-40">
-           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+           <div className="absolute inset-0 bg-[url(' ')]"></div>
            <img 
-            src="https://images.unsplash.com/photo-1565457223363-d343c1b48ab6?q=80&w=2070&auto=format&fit=crop" 
+            src="..\imagens\termo1.jpg" 
             alt="Industrial Machinery" 
             className="w-full h-full object-cover"
            />
@@ -95,7 +95,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
             <div className="relative">
               <div className="absolute -top-4 -left-4 w-24 h-24 bg-termo-yellow/20 rounded-full z-0"></div>
               <img 
-                src="https://images.unsplash.com/photo-1567789884554-0b844b597180?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                src="../imagens/termoerosao.jpg" 
                 alt="Factory Floor" 
                 className="rounded-lg shadow-2xl relative z-10"
               />
@@ -110,6 +110,11 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
               <p className="text-gray-600 leading-relaxed mb-6">
                 A Termosinter é líder nacional na fabricação de peças sinterizadas. Utilizamos pós metálicos de alta pureza e processos de compactação de última geração para criar componentes complexos com desperdício mínimo de material e máxima eficiência energética.
               </p>
+
+              <button className="hidden md:flex items-center gap-2 text-termo-dark font-bold hover:text-termo-yellowDark transition-colors">
+                Assista nosso vídeo <ArrowRight size={20} />
+              </button>
+              <hr></hr>
               <ul className="space-y-4 mb-8">
                 {['Certificação ISO 9001', 'Laboratório de Metrologia Próprio', 'Capacidade de produção em massa'].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-termo-dark font-medium">
