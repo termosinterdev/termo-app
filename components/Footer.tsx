@@ -19,7 +19,7 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
               </span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
-              Indústria brasileira referência em metalurgia do pó. Inovação, qualidade e precisão em cada componente produzido desde 1995.
+              Indústria brasileira referência em metalurgia do pó. Inovação, qualidade e precisão em cada componente produzido desde 1953.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-termo-yellow transition-colors"><Linkedin size={20} /></a>
@@ -52,11 +52,11 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="text-termo-yellow shrink-0 mt-1" />
-                <span>Av. Industrial, 1234 - Distrito Industrial<br/>São Paulo, SP - Brasil</span>
+                <span>Rua Milton José Nunes Fernandes, 1.500 Chácara Santa Maria<br/>Guaratinguetá - São Paulo, SP - Brasil</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={18} className="text-termo-yellow shrink-0" />
-                <span>+55 (11) 3333-4444</span>
+                <span>+55 (11) 3122-1146</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-termo-yellow shrink-0" />
