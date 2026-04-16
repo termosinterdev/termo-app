@@ -52,7 +52,7 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="text-termo-yellow shrink-0 mt-1" />
-                <span>Rua Milton José Nunes Fernandes, 1.500 Chácara Santa Maria<br/>Guaratinguetá - São Paulo, SP - Brasil</span>
+                <span>Rua Milton José Nunes Fernandes, 1.500 Chácara Santa Maria<br/>Guaratinguetá  - São Paulo, SP - Brasil</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={18} className="text-termo-yellow shrink-0" />
