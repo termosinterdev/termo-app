@@ -68,11 +68,11 @@ export const Catalog: React.FC<CatalogProps> = ({ navigate }) => {
                         product.description.toLowerCase().includes(lowerSearch) ||
                         product.material.toLowerCase().includes(lowerSearch) ||
                         (!!product.specs && Object.values(product.specs).some(val => String(val).toLowerCase().includes(lowerSearch)));
-      } else if (searchField === 'Nome') {
+      } else if (searchField === 'Código') {
         matchesSearch = product.name.toLowerCase().includes(lowerSearch);
-      } else if (searchField === 'Aplicação') {
+      } else if (searchField === 'Nome') {
         matchesSearch = product.description.toLowerCase().includes(lowerSearch);
-      } else if (searchField === 'Material') {
+      } else if (searchField === 'Aplicação') {
         matchesSearch = product.material.toLowerCase().includes(lowerSearch) || (!!product.specs?.material && String(product.specs.material).toLowerCase().includes(lowerSearch));
       } else {
         // Buscar em chave dinâmica do objeto specs (ex: fabricator, diametro)
@@ -105,9 +105,9 @@ export const Catalog: React.FC<CatalogProps> = ({ navigate }) => {
                 >
                   <option value="Todos">Todos</option>
                   <optgroup label="Especificações">
-                    <option value="Nome">Nome</option>
-                    <option value="Aplicação">Aplicação</option>
-                    <option value="Material">Material</option>
+                    <option value="Nome">Código</option>
+                    <option value="Aplicação">Nome</option>
+                    <option value="Material">Aplicação</option>
                     {specKeys.map(key => {
                       const displayLabel = key === 'fabricator' 
                         ? 'Fabricante' 
