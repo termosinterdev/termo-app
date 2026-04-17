@@ -154,7 +154,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
           <div className="flex justify-between items-end mb-12">
             <div>
               <h2 className="text-3xl md:text-4xl font-display font-bold text-termo-dark">DESTAQUES</h2>
-              <p className="text-gray-500 mt-2">Soluções mais procuradas pela indústria</p>
+              <p className="text-gray-500 mt-2">Nossos principais produtos</p>
             </div>
             <button 
               onClick={() => navigate(PageRoute.CATALOG)}

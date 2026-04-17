@@ -90,7 +90,7 @@ export const Catalog: React.FC<CatalogProps> = ({ navigate }) => {
         
         <div className="mb-12 text-center">
           <h1 className="text-4xl md:text-5xl font-display font-bold text-termo-dark mb-4">CATÁLOGO DE PRODUTOS</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">Explore nossa linha completa de componentes sinterizados. Utilize os filtros abaixo para encontrar a peça ideal para o seu projeto.</p>
+          <p className="text-gray-600 max-w-2xl mx-auto">Explore nossa linha completa de produtos sinterizados. Utilize os filtros abaixo para te ajudar a encontrar o que precisa.</p>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md mb-12 border border-gray-100">
