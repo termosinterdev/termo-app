@@ -51,7 +51,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
         <div className="absolute inset-0 z-0 opacity-40">
            <div className="absolute inset-0 bg-[url(' ')]"></div>
            <img 
-            src="..\imagens\termo1.jpg" 
+            src="/imagens/termo1.jpg" 
             alt="Industrial Machinery" 
             className="w-full h-full object-cover"
            />
