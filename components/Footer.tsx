@@ -35,7 +35,7 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
               <li><button onClick={() => navigate(PageRoute.CATALOG)} className="hover:text-white transition-colors">Catálogo de Produtos</button></li>
               <li className="pt-2">
                 <a 
-                  href="http://localhost:1337/admin" 
+                  href="https://termosinter.ind.br/api/admin/"
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-gray-700 hover:text-termo-yellow transition-colors"
@@ -60,7 +60,7 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-termo-yellow shrink-0" />
-                <span>contato@termosinter.com.br</span>
+                <span>luciano@termosinter.com.br</span>
               </li>
             </ul>
           </div>

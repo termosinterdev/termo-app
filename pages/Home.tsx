@@ -34,7 +34,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
         price: sp.price || '',
         specs: sp.specs || {},
         images: sp.pictures && sp.pictures.length > 0 
-          ? sp.pictures.map(p => `http://localhost:1337${p.url}`) 
+          ? sp.pictures.map(p => `https://termosinter.ind.br/api/admin/auth/login${p.url}`) 
           : ['https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800']
       }));
       
