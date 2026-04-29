@@ -35,7 +35,7 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
               <li><button onClick={() => navigate(PageRoute.CATALOG)} className="hover:text-white transition-colors">Catálogo de Produtos</button></li>
               <li className="pt-2">
                 <a 
-                  href="https://termosinter.ind.br/api/admin/"
+                  href="https://termosinter.ind.br/admin/"
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-gray-700 hover:text-termo-yellow transition-colors"

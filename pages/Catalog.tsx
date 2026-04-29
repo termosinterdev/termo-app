@@ -26,6 +26,7 @@ export const Catalog: React.FC<CatalogProps> = ({ navigate }) => {
       
       const mappedProducts: Product[] = strapiProducts.map(sp => ({
         id: sp.id,
+	code: sp.code,
         name: sp.name,
         category: (sp.category?.name as any) || 'Outros',
         description: sp.applied || 'Produto com alta durabilidade e precisão.',
@@ -64,15 +65,16 @@ export const Catalog: React.FC<CatalogProps> = ({ navigate }) => {
       if (!searchTerm) {
         matchesSearch = true;
       } else if (searchField === 'Todos') {
-        matchesSearch = product.name.toLowerCase().includes(lowerSearch) || 
+        matchesSearch = product.name.toLowerCase().includes(lowerSearch) ||
+			product.code.toLowerCase().includes(lowerSearch) || 
                         product.description.toLowerCase().includes(lowerSearch) ||
                         product.material.toLowerCase().includes(lowerSearch) ||
                         (!!product.specs && Object.values(product.specs).some(val => String(val).toLowerCase().includes(lowerSearch)));
-      } else if (searchField === 'Código') {
-        matchesSearch = product.name.toLowerCase().includes(lowerSearch);
-      } else if (searchField === 'Nome') {
+      } else if (searchField === 'code') {
+        matchesSearch = product.code.toLowerCase().includes(lowerSearch);
+      } else if (searchField === 'name') {
         matchesSearch = product.description.toLowerCase().includes(lowerSearch);
-      } else if (searchField === 'Aplicação') {
+      } else if (searchField === 'description') {
         matchesSearch = product.material.toLowerCase().includes(lowerSearch) || (!!product.specs?.material && String(product.specs.material).toLowerCase().includes(lowerSearch));
       } else {
         // Buscar em chave dinâmica do objeto specs (ex: fabricator, diametro)
@@ -105,9 +107,9 @@ export const Catalog: React.FC<CatalogProps> = ({ navigate }) => {
                 >
                   <option value="Todos">Todos</option>
                   <optgroup label="Especificações">
-                    <option value="Nome">Código</option>
-                    <option value="Aplicação">Nome</option>
-                    <option value="Material">Aplicação</option>
+                    <option value="code">Código</option>
+                    <option value="name">Nome</option>
+                    <option value="description">Aplicação</option>
                     {specKeys.map(key => {
                       const displayLabel = key === 'fabricator' 
                         ? 'Fabricante' 
