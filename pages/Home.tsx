@@ -35,7 +35,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
         specs: sp.specs || {},
         images: sp.pictures && sp.pictures.length > 0 
           ? sp.pictures.map(p => `https://termosinter.ind.br/api/admin/auth/login${p.url}`) 
-          : ['https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800']
+          : ['https://drive.google.com/drive/folders/1TeeS80653W6aOXndSROgSiciAHpTlexV?usp=sharing']
       }));
       
       setFeaturedProducts(mappedProducts);

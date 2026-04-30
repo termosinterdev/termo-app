@@ -26,7 +26,7 @@ export const Catalog: React.FC<CatalogProps> = ({ navigate }) => {
       
       const mappedProducts: Product[] = strapiProducts.map(sp => ({
         id: sp.id,
-	code: sp.code,
+	      code: sp.code,
         name: sp.name,
         category: (sp.category?.name as any) || 'Outros',
         description: sp.applied || 'Produto com alta durabilidade e precisão.',
@@ -35,7 +35,7 @@ export const Catalog: React.FC<CatalogProps> = ({ navigate }) => {
         specs: sp.specs || {},
         images: sp.pictures && sp.pictures.length > 0 
           ? sp.pictures.map(p => `http://localhost:1337${p.url}`) 
-          : ['https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800']
+          : ['https://drive.google.com/drive/folders/1TeeS80653W6aOXndSROgSiciAHpTlexV?usp=sharing']
       }));
       
       setProducts(mappedProducts);
