@@ -32,7 +32,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ productId, navigat
         code: sp.code,
         images: sp.pictures && sp.pictures.length > 0 
           ? sp.pictures.map(p => `http://localhost:1337${p.url}`) 
-          : ['https://drive.google.com/drive/folders/1TeeS80653W6aOXndSROgSiciAHpTlexV?usp=sharing']
+          : ['https://photos.fife.usercontent.google.com/pw/AP1GczPJr5V3GrUkjs2zfKjIEAmbu6unLpZmmiZG20QJik8Puo9p7yJWds2osw=w578-h586-s-no-gm?authuser=0']
       }));
       
       const foundProduct = mappedProducts.find(p => p.id === productId);
