@@ -3,7 +3,7 @@ import { SERVICES } from '../constants';
 import { PageRoute, Product } from '../types';
 import { fetchProducts } from '../api';
 import { ProductCard } from '../components/ProductCard';
-import { Settings, Wrench, Microscope, Flame, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { Settings, Wrench, Microscope, Flame, ArrowRight, CheckCircle2, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HomeProps {
   navigate: (route: string) => void;
@@ -16,9 +16,44 @@ const iconMap: Record<string, React.ReactNode> = {
   Flame: <Flame size={40} />,
 };
 
+const carouselSlides = [
+  {
+    id: 1,
+    image: "public/imagens/9A5EEFD4-90E2-4544-93CF-80A129C8222C.jpg",
+    subtitle: "QUALIDADE, ATENDIMENTO E PONTUALIDADE",
+    title: <>A FILOSOFIA <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">DA TERMOSINTER</span></>,
+    description: "Situada em Guaratinguetá (SP), somos uma empresa brasileira focada em metalurgia do pó. Com tecnologia própria e unidade fabril de 100.000m², entregamos pós metálicos e peças sinterizadas de altíssima qualidade."
+  },
+  {
+    id: 2,
+    image: "public/imagens/37F54947-3373-4B7B-ADF7-831CEC688358.jpg",
+    subtitle: "Tecnologia",
+    title: <>SOLUÇÕES <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">INOVADORAS</span></>,
+    description: "Com ampla experiência e acesso a tecnologias avançadas, focamos na evolução constante. Desenvolvemos as melhores soluções buscando ótimo custo-benefício, concepção inteligente de produtos e suporte técnico de excelência."
+  },
+  {
+    id: 3,
+    image: "public/imagens/2A57BAFB-E969-47D5-8195-378E0A193D84.jpg",
+    subtitle: "Meio Ambiente",
+    title: <>COMPROMISSO <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">AMBIENTAL</span></>,
+    description: "A sustentabilidade é prioridade em nossas decisões. Garantimos rigoroso controle de particulados e reuso de água industrial, operando sempre em total conformidade com as regulamentações ambientais vigentes."
+  }
+];
+
 export const Home: React.FC<HomeProps> = ({ navigate }) => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [currentSlide]);
+
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -47,46 +82,65 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <section className="relative h-[90vh] flex items-center bg-termo-dark overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-40">
-           <div className="absolute inset-0 bg-[url(' ')]"></div>
-           <img 
-            src="/imagens/termo1.jpg" 
-            alt="Industrial Machinery" 
-            className="w-full h-full object-cover"
-           />
-           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
-        </div>
-
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="max-w-3xl">
-            <h2 className="text-termo-yellow font-bold uppercase tracking-[0.2em] mb-4 animate-fade-in">Desde 1953</h2>
-            <h1 className="text-5xl md:text-7xl font-display font-bold text-white leading-tight mb-8">
-              EXCELÊNCIA EM <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">
-                METALURGIA DO PÓ
-              </span>
-            </h1>
-            <p className="text-xl text-gray-300 mb-10 leading-relaxed max-w-2xl">
-              Soluções avançadas em sinterização para a indústria automotiva e de eletrodomésticos. 
-              Precisão micrométrica e durabilidade incomparável.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button 
-                onClick={() => navigate(PageRoute.CATALOG)}
-                className="px-8 py-4 bg-termo-yellow text-termo-dark font-bold text-lg uppercase tracking-wider rounded hover:bg-termo-yellowDark transition-colors flex items-center justify-center gap-2"
+      <section className="relative h-[100vh] flex items-center bg-termo-dark overflow-hidden group">
+        {carouselSlides.map((slide, index) => (
+          <div 
+            key={slide.id}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+          >
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] mix-blend-overlay opacity-40 z-10 pointer-events-none"></div>
+            {/* Parallax effect background image */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center bg-fixed transition-transform duration-[10000ms] ease-linear"
+              style={{ 
+                backgroundImage: `url(${slide.image})`,
+                transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)'
+              }}
+            ></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent z-10"></div>
+            
+            <div className="container mx-auto px-6 relative z-20 h-full flex items-center">
+              <div 
+                className={`max-w-3xl backdrop-blur-md bg-white/5 border border-white/10 p-8 md:p-12 rounded-2xl shadow-2xl transition-all duration-1000 delay-300 ${
+                  index === currentSlide ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+                }`}
               >
-                Ver Catálogo <ArrowRight size={20} />
-              </button>
-              <button 
-                onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-8 py-4 border border-white text-white font-bold text-lg uppercase tracking-wider rounded hover:bg-white hover:text-termo-dark transition-colors"
-              >
-                Nossa Empresa
-              </button>
+                <h2 className="text-termo-yellow font-bold uppercase tracking-[0.2em] mb-4">{slide.subtitle}</h2>
+                <h1 className="text-5xl md:text-7xl font-display font-bold text-white leading-tight mb-8 drop-shadow-lg">
+                  {slide.title}
+                </h1>
+                <p className="text-xl text-gray-200 mb-10 leading-relaxed max-w-2xl drop-shadow-md">
+                  {slide.description}
+                </p>
+              </div>
             </div>
           </div>
+        ))}
+
+        {/* Carousel Controls */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3 z-30">
+          {carouselSlides.map((_, index) => (
+            <button 
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`h-2 rounded-full transition-all duration-500 ${index === currentSlide ? 'bg-termo-yellow w-12' : 'bg-white/40 hover:bg-white/80 w-3'}`}
+              aria-label={`Ir para o slide ${index + 1}`}
+            />
+          ))}
         </div>
+
+        <button 
+          onClick={prevSlide}
+          className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-30 p-3 text-white/50 hover:text-white hover:bg-white/10 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+        >
+          <ChevronLeft size={40} strokeWidth={1.5} />
+        </button>
+        <button 
+          onClick={nextSlide}
+          className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-30 p-3 text-white/50 hover:text-white hover:bg-white/10 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+        >
+          <ChevronRight size={40} strokeWidth={1.5} />
+        </button>
       </section>
 
       <section id="about" className="py-20 bg-white">
