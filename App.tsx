@@ -5,6 +5,7 @@ import { Home } from './pages/Home';
 import { Catalog } from './pages/Catalog';
 import { Admin } from './pages/Admin';
 import { ProductDetail } from './pages/ProductDetail';
+import { About } from './pages/About';
 import { PageRoute } from './types';
 
 
@@ -40,6 +41,8 @@ const App: React.FC = () => {
     switch (currentRoute) {
       case PageRoute.HOME:
         return <Home navigate={navigate} />;
+      case PageRoute.ABOUT:
+        return <About navigate={navigate} />;
       case PageRoute.CATALOG:
         return <Catalog navigate={navigate} />;
       case PageRoute.ADMIN:

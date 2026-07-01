@@ -20,6 +20,7 @@ export interface Service {
 export enum PageRoute {
   HOME = '/',
   CATALOG = '/catalogo',
+  ABOUT = '/sobre',
   ADMIN = '/admin',
   CONTACT = '/contato'
 }
