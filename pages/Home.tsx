@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SERVICES } from '../constants';
 import { PageRoute, Product } from '../types';
-import { fetchProducts } from '../api';
+import { fetchFavoriteProducts, mapStrapiProduct } from '../api';
 import { ProductCard } from '../components/ProductCard';
 import { Settings, Wrench, Microscope, Flame, ArrowRight, CheckCircle2, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -19,21 +19,21 @@ const iconMap: Record<string, React.ReactNode> = {
 const carouselSlides = [
   {
     id: 1,
-    image: "public/imagens/9A5EEFD4-90E2-4544-93CF-80A129C8222C.jpg",
+    image: "/imagens/9A5EEFD4-90E2-4544-93CF-80A129C8222C.jpg",
     subtitle: "QUALIDADE, ATENDIMENTO E PONTUALIDADE",
     title: <>A FILOSOFIA <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">DA TERMOSINTER</span></>,
     description: "Situada em Guaratinguetá (SP), somos uma empresa brasileira focada em metalurgia do pó. Com tecnologia própria e unidade fabril de 100.000m², entregamos pós metálicos e peças sinterizadas de altíssima qualidade."
   },
   {
     id: 2,
-    image: "public/imagens/37F54947-3373-4B7B-ADF7-831CEC688358.jpg",
+    image: "/imagens/37F54947-3373-4B7B-ADF7-831CEC688358.jpg",
     subtitle: "Tecnologia",
     title: <>SOLUÇÕES <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">INOVADORAS</span></>,
     description: "Com ampla experiência e acesso a tecnologias avançadas, focamos na evolução constante. Desenvolvemos as melhores soluções buscando ótimo custo-benefício, concepção inteligente de produtos e suporte técnico de excelência."
   },
   {
     id: 3,
-    image: "public/imagens/2A57BAFB-E969-47D5-8195-378E0A193D84.jpg",
+    image: "/imagens/2A57BAFB-E969-47D5-8195-378E0A193D84.jpg",
     subtitle: "Meio Ambiente",
     title: <>COMPROMISSO <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">AMBIENTAL</span></>,
     description: "A sustentabilidade é prioridade em nossas decisões. Garantimos rigoroso controle de particulados e reuso de água industrial, operando sempre em total conformidade com as regulamentações ambientais vigentes."
@@ -58,20 +58,9 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
   useEffect(() => {
     const loadProducts = async () => {
       setLoadingProducts(true);
-      const strapiProducts = await fetchProducts();
+      const strapiProducts = await fetchFavoriteProducts();
       
-      const mappedProducts: Product[] = strapiProducts.slice(0, 3).map(sp => ({
-        id: sp.id,
-        name: sp.name,
-        category: (sp.category?.name as any) || 'Outros',
-        description: sp.applied || 'Produto com alta durabilidade e precisão.',
-        material: sp.specs?.material || 'Diversos',
-        price: sp.price || '',
-        specs: sp.specs || {},
-        images: sp.pictures && sp.pictures.length > 0 
-          ? sp.pictures.map(p => `https://termosinter.ind.br/api/admin/auth/login${p.url}`) 
-          : ['https://drive.google.com/drive/folders/1TeeS80653W6aOXndSROgSiciAHpTlexV?usp=sharing']
-      }));
+      const mappedProducts: Product[] = strapiProducts.map(mapStrapiProduct);
       
       setFeaturedProducts(mappedProducts);
       setLoadingProducts(false);
@@ -81,35 +70,56 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-[#0f0f0f]">
+      {/* ===== HERO CAROUSEL ===== */}
       <section className="relative h-[100vh] flex items-center bg-termo-dark overflow-hidden group">
+        {/* Diagonal cut bottom */}
+        <div
+          className="absolute bottom-0 left-0 w-full h-24 bg-[#0f0f0f] z-30"
+          style={{ clipPath: 'polygon(0 100%, 100% 0, 100% 100%)' }}
+        />
+
         {carouselSlides.map((slide, index) => (
-          <div 
+          <div
             key={slide.id}
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
           >
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] mix-blend-overlay opacity-40 z-10 pointer-events-none"></div>
+            {/* Grid texture */}
+            <div
+              className="absolute inset-0 opacity-20 z-10 pointer-events-none mix-blend-overlay"
+              style={{
+                backgroundImage: 'linear-gradient(rgba(252,211,77,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(252,211,77,0.4) 1px, transparent 1px)',
+                backgroundSize: '60px 60px'
+              }}
+            />
             {/* Parallax effect background image */}
-            <div 
+            <div
               className="absolute inset-0 bg-cover bg-center bg-fixed transition-transform duration-[10000ms] ease-linear"
-              style={{ 
+              style={{
                 backgroundImage: `url(${slide.image})`,
                 transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)'
               }}
             ></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent z-10"></div>
-            
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0f0f0f] via-black/80 to-transparent z-10"></div>
+
             <div className="container mx-auto px-6 relative z-20 h-full flex items-center">
-              <div 
-                className={`max-w-3xl backdrop-blur-md bg-white/5 border border-white/10 p-8 md:p-12 rounded-2xl shadow-2xl transition-all duration-1000 delay-300 ${
+              <div
+                className={`max-w-3xl transition-all duration-1000 delay-300 ${
                   index === currentSlide ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
                 }`}
               >
-                <h2 className="text-termo-yellow font-bold uppercase tracking-[0.2em] mb-4">{slide.subtitle}</h2>
-                <h1 className="text-5xl md:text-7xl font-display font-bold text-white leading-tight mb-8 drop-shadow-lg">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-0.5 bg-termo-yellow" />
+                  <span className="text-termo-yellow font-mono font-bold uppercase tracking-[0.4em] text-xs">
+                    {slide.subtitle}
+                  </span>
+                </div>
+
+                <h1 className="text-6xl md:text-8xl font-display font-black text-white leading-none mb-8 tracking-tight uppercase">
                   {slide.title}
                 </h1>
-                <p className="text-xl text-gray-200 mb-10 leading-relaxed max-w-2xl drop-shadow-md">
+
+                <p className="text-xl text-gray-400 max-w-2xl leading-relaxed border-l-2 border-termo-yellow pl-6 font-medium">
                   {slide.description}
                 </p>
               </div>
@@ -118,9 +128,9 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
         ))}
 
         {/* Carousel Controls */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3 z-30">
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-3 z-40">
           {carouselSlides.map((_, index) => (
-            <button 
+            <button
               key={index}
               onClick={() => setCurrentSlide(index)}
               className={`h-2 rounded-full transition-all duration-500 ${index === currentSlide ? 'bg-termo-yellow w-12' : 'bg-white/40 hover:bg-white/80 w-3'}`}
@@ -129,50 +139,86 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
           ))}
         </div>
 
-        <button 
+        <button
           onClick={prevSlide}
-          className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-30 p-3 text-white/50 hover:text-white hover:bg-white/10 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+          className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-40 p-3 text-white/30 hover:text-termo-yellow hover:bg-white/5 rounded-full transition-all opacity-0 group-hover:opacity-100"
         >
-          <ChevronLeft size={40} strokeWidth={1.5} />
+          <ChevronLeft size={48} strokeWidth={1.5} />
         </button>
-        <button 
+        <button
           onClick={nextSlide}
-          className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-30 p-3 text-white/50 hover:text-white hover:bg-white/10 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+          className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-40 p-3 text-white/30 hover:text-termo-yellow hover:bg-white/5 rounded-full transition-all opacity-0 group-hover:opacity-100"
         >
-          <ChevronRight size={40} strokeWidth={1.5} />
+          <ChevronRight size={48} strokeWidth={1.5} />
         </button>
       </section>
 
-      <section id="about" className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+      {/* ===== SOBRE A TERMOSINTER ===== */}
+      <section id="about" className="py-24 bg-[#141414] relative overflow-hidden">
+        {/* Background grid */}
+        <div
+          className="absolute inset-0 opacity-5 pointer-events-none"
+          style={{
+            backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)',
+            backgroundSize: '40px 40px'
+          }}
+        />
+        {/* Right accent bar */}
+        <div className="absolute right-0 top-0 bottom-0 w-1 bg-termo-yellow/30" />
+
+        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-20 items-center">
+            {/* Image Side */}
             <div className="relative">
-              <div className="absolute -top-4 -left-4 w-24 h-24 bg-termo-yellow/20 rounded-full z-0"></div>
-              <img 
-                src="../imagens/termoerosao.jpg" 
-                alt="Factory Floor" 
-                className="rounded-lg shadow-2xl relative z-10"
-              />
-              <div className="absolute -bottom-6 -right-6 bg-termo-dark p-8 rounded shadow-xl z-20 hidden md:block">
-                <p className="text-termo-yellow text-4xl font-display font-bold">+25 Anos</p>
-                <p className="text-gray-400 text-sm uppercase tracking-wider">De Inovação</p>
+              <div className="relative overflow-hidden group">
+                {/* Yellow border accent corners */}
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-termo-yellow z-20" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-termo-yellow z-20" />
+
+                <img
+                  src="/imagens/termoerosao.jpg"
+                  alt="Factory Floor"
+                  className="w-full h-auto object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700"
+                />
+                <div className="absolute inset-0 bg-termo-yellow/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </div>
+
+              <div className="absolute -bottom-8 -right-8 bg-[#0f0f0f] border border-white/10 p-8 shadow-2xl z-30 hidden md:block group">
+                {/* Hover fill effect */}
+                <div className="absolute inset-0 bg-termo-yellow scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-bottom" />
+                <div className="relative z-10 text-center">
+                  <p className="text-white group-hover:text-termo-dark text-5xl font-display font-black transition-colors duration-300">
+                    +25 <span className="text-termo-yellow group-hover:text-termo-dark">Anos</span>
+                  </p>
+                  <p className="text-gray-500 group-hover:text-termo-dark font-bold uppercase tracking-widest text-xs mt-2 transition-colors duration-300">
+                    De Inovação
+                  </p>
+                </div>
               </div>
             </div>
+
+            {/* Text Side */}
             <div>
-              <h3 className="text-termo-yellow font-bold uppercase tracking-wider mb-2">Sobre a Termosinter</h3>
-              <h2 className="text-4xl font-display font-bold text-termo-dark mb-6">Tecnologia Sinterizada para Alta Performance</h2>
-              <p className="text-gray-600 leading-relaxed mb-6">
+              <span className="text-termo-yellow font-mono font-bold uppercase tracking-[0.4em] text-xs">
+                Sobre a Termosinter
+              </span>
+              <h2 className="text-5xl md:text-6xl font-display font-black text-white mt-4 mb-6 leading-none">
+                TECNOLOGIA <span className="text-white/20">SINTERIZADA</span><br />
+                PARA ALTA PERFORMANCE
+              </h2>
+
+              <div className="w-12 h-1 bg-termo-yellow mb-8" />
+
+              <p className="text-gray-400 leading-relaxed text-lg mb-8">
                 A Termosinter é líder nacional na fabricação de peças sinterizadas. Utilizamos pós metálicos de alta pureza e processos de compactação de última geração para criar componentes complexos com desperdício mínimo de material e máxima eficiência energética.
               </p>
 
-              <button className="hidden md:flex items-center gap-2 text-termo-dark font-bold hover:text-termo-yellowDark transition-colors">
-                Assista nosso vídeo <ArrowRight size={20} />
-              </button>
-              <hr></hr>
-              <ul className="space-y-4 mb-8">
+              <div className="h-px bg-white/10 w-full mb-8" />
+
+              <ul className="space-y-4">
                 {['Certificação ISO 9001', 'Laboratório de Metrologia Próprio', 'Capacidade de produção em massa'].map((item) => (
-                  <li key={item} className="flex items-center gap-3 text-termo-dark font-medium">
-                    <CheckCircle2 className="text-termo-yellow" size={20} />
+                  <li key={item} className="flex items-center gap-4 text-gray-300 font-medium">
+                    <CheckCircle2 className="text-termo-yellow flex-shrink-0" size={24} />
                     {item}
                   </li>
                 ))}
@@ -182,46 +228,81 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
         </div>
       </section>
 
-      <section className="py-24 bg-termo-silver">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-termo-dark mb-4">NOSSOS PROCESSOS</h2>
-            <div className="w-24 h-1 bg-termo-yellow mx-auto"></div>
+      {/* ===== NOSSOS PROCESSOS ===== */}
+      <section className="py-32 bg-[#141414] scroll-reveal relative overflow-hidden">
+        {/* Top diagonal */}
+        <div className="container mx-auto px-6 relative z-10 pt-10">
+          <div className="text-center mb-20">
+            <span className="text-termo-yellow font-mono font-bold uppercase tracking-[0.4em] text-xs">Visão Geral</span>
+            <h2 className="text-5xl md:text-7xl font-display font-black text-white mt-3 mb-6">
+              NOSSOS <span className="text-white/20">PROCESSOS</span>
+            </h2>
+            <div className="w-16 h-1 bg-termo-yellow mx-auto"></div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {SERVICES.map((service) => (
-              <div key={service.id} className="bg-white p-8 rounded-lg shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-t-4 border-transparent hover:border-termo-yellow group">
-                <div className="text-termo-metal group-hover:text-termo-yellow transition-colors mb-6">
-                  {iconMap[service.iconName]}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {SERVICES.map((service, index) => (
+              <div 
+                key={service.id} 
+                className="bg-[#1a1a1a] border border-white/10 p-10 relative overflow-hidden group transition-all duration-500"
+              >
+                {/* Hover fill */}
+                <div className="absolute inset-0 bg-termo-yellow scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-bottom" />
+                
+                <div className="relative z-10">
+                  <div className="text-termo-yellow group-hover:text-termo-dark transition-colors duration-300 mb-8">
+                    {iconMap[service.iconName]}
+                  </div>
+                  <h3 className="text-2xl font-display font-black text-white group-hover:text-termo-dark transition-colors duration-300 mb-4">
+                    {service.title}
+                  </h3>
+                  <div className="w-8 h-0.5 bg-white/20 group-hover:bg-termo-dark/30 mb-4 transition-colors duration-300" />
+                  <p className="text-gray-400 group-hover:text-termo-dark/80 text-sm leading-relaxed transition-colors duration-300">
+                    {service.description}
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-termo-dark mb-3">{service.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{service.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-24 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="flex justify-between items-end mb-12">
+      {/* ===== DESTAQUES ===== */}
+      <section className="py-32 bg-[#0f0f0f] scroll-reveal relative overflow-hidden">
+        {/* Grid texture overlay */}
+        <div 
+          className="absolute inset-0 opacity-5 pointer-events-none"
+          style={{
+            backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)',
+            backgroundSize: '40px 40px'
+          }}
+        />
+
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8">
             <div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-termo-dark">DESTAQUES</h2>
-              <p className="text-gray-500 mt-2">Nossos principais produtos</p>
+              <span className="text-termo-yellow font-mono font-bold uppercase tracking-[0.4em] text-xs">Portfólio</span>
+              <h2 className="text-5xl md:text-7xl font-display font-black text-white mt-3">
+                DESTAQUES
+              </h2>
+              <p className="text-gray-500 font-medium text-lg mt-2">
+                Nossos principais produtos
+              </p>
             </div>
+            
             <button 
               onClick={() => navigate(PageRoute.CATALOG)}
-              className="hidden md:flex items-center gap-2 text-termo-dark font-bold hover:text-termo-yellowDark transition-colors"
+              className="hidden md:flex items-center gap-3 px-8 py-4 bg-termo-yellow text-termo-dark font-black uppercase tracking-widest hover:bg-white transition-colors group"
             >
-              Ver Tudo <ArrowRight size={20} />
+              Ver Tudo 
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
 
           {loadingProducts ? (
-            <div className="flex flex-col items-center justify-center py-10">
-              <Loader2 size={40} className="text-termo-yellow animate-spin mb-4" />
-              <p className="text-gray-500 font-medium">Carregando destaques...</p>
+            <div className="flex flex-col items-center justify-center py-20 border border-white/5 bg-white/5">
+              <Loader2 size={48} className="text-termo-yellow animate-spin mb-4" />
+              <p className="text-gray-500 font-bold uppercase tracking-wider text-sm">Carregando destaques...</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -233,7 +314,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
 
           <button 
               onClick={() => navigate(PageRoute.CATALOG)}
-              className="md:hidden mt-8 w-full py-4 border border-termo-dark text-termo-dark font-bold uppercase rounded hover:bg-termo-dark hover:text-white transition-colors"
+              className="md:hidden mt-10 w-full py-5 bg-white/5 border border-white/10 text-white font-bold uppercase tracking-widest rounded-none hover:bg-termo-yellow hover:text-termo-dark hover:border-termo-yellow transition-colors"
             >
               Ver Catálogo Completo
           </button>

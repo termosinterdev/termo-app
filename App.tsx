@@ -15,7 +15,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '') || PageRoute.HOME;
-      setCurrentRoute(hash);
+      if (document.startViewTransition) {
+        document.startViewTransition(() => {
+          setCurrentRoute(hash);
+        });
+      } else {
+        setCurrentRoute(hash);
+      }
     };
 
     handleHashChange();

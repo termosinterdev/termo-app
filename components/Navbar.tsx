@@ -31,19 +31,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, navigate }) => {
 
 
   const isHome = currentRoute === PageRoute.HOME;
-  const isDarkHero = currentRoute === PageRoute.HOME || currentRoute === PageRoute.ABOUT;
+  const isDarkHero = currentRoute === PageRoute.HOME || currentRoute === PageRoute.ABOUT || currentRoute === PageRoute.CATALOG;
   const useDarkText = !scrolled && !isOpen && !isDarkHero;
 
   const textColorClass = useDarkText ? 'text-termo-dark' : 'text-white';
   const menuIconClass = useDarkText ? 'text-termo-dark' : 'text-white';
 
-  const glassBase = "px-5 py-2 rounded-xl backdrop-blur-md border transition-all duration-300 text-sm font-bold tracking-wider uppercase";
-  
-  const glassInactiveLight = "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/20 hover:shadow-lg [text-shadow:_0_1px_3px_rgb(0_0_0_/_80%)]";
-  const glassActiveLight = "bg-white/20 border-white/40 text-termo-yellow [text-shadow:_0_1px_3px_rgb(0_0_0_/_80%)]";
-  
-  const glassInactiveDark = "bg-black/5 border-black/10 text-gray-600 hover:bg-black/10 hover:text-termo-dark hover:border-black/20";
-  const glassActiveDark = "bg-black/15 border-black/30 text-termo-dark";
+  const glassBase = "px-6 py-2.5 rounded-none border transition-all duration-300 text-sm font-black tracking-widest uppercase";
+
+  // Industrial buttons - dark hero: borda branca sólida, texto branco, hover amarelo
+  const glassInactiveLight = "bg-transparent border-white/60 text-white hover:bg-termo-yellow hover:text-termo-dark hover:border-termo-yellow";
+  const glassActiveLight = "bg-termo-yellow border-termo-yellow text-termo-dark";
+
+  // Industrial buttons - light background (scrolled or other pages)
+  const glassInactiveDark = "bg-transparent border-termo-dark/30 text-termo-dark hover:bg-termo-yellow hover:text-termo-dark hover:border-termo-yellow";
+  const glassActiveDark = "bg-termo-yellow border-termo-yellow text-termo-dark";
 
   return (
     <nav 
