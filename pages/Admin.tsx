@@ -54,7 +54,6 @@ export const Admin: React.FC = () => {
                   <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
                   <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Imagem</th>
                   <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Nome</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Categoria</th>
                   <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Material</th>
                   <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Preço</th>
                   <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Ações</th>
@@ -68,11 +67,6 @@ export const Admin: React.FC = () => {
                       <img src={product.images[0]} alt="" className="w-10 h-10 rounded object-cover border border-gray-200" />
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{product.name}</td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 text-xs font-bold bg-blue-100 text-blue-800 rounded-full">
-                        {product.category}
-                      </span>
-                    </td>
                     <td className="px-6 py-4 text-sm text-gray-500">{product.material}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{product.price}</td>
                     <td className="px-6 py-4 text-right">

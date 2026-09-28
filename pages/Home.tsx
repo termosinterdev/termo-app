@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SERVICES } from '../constants';
 import { PageRoute, Product } from '../types';
 import { fetchFavoriteProducts, mapStrapiProduct } from '../api';
@@ -44,16 +44,28 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
+  const startTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
     }, 6000);
-    return () => clearInterval(timer);
-  }, [currentSlide]);
+  };
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length);
+  useEffect(() => {
+    startTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
+    startTimer();
+  };
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length);
+    startTimer();
+  };
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -122,6 +134,27 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
                 <p className="text-xl text-gray-400 max-w-2xl leading-relaxed border-l-2 border-termo-yellow pl-6 font-medium">
                   {slide.description}
                 </p>
+
+                {/* CTAs — visíveis apenas no slide ativo */}
+                {index === currentSlide && (
+                  <div className="flex flex-col sm:flex-row gap-4 mt-10">
+                    <button
+                      onClick={() => navigate(PageRoute.CATALOG)}
+                      className="inline-flex items-center gap-3 px-8 py-4 bg-termo-yellow text-termo-dark font-black uppercase tracking-widest hover:bg-white transition-colors group text-sm"
+                      aria-label="Ver catálogo de produtos"
+                    >
+                      Ver Catálogo
+                      <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                    <button
+                      onClick={() => navigate(PageRoute.ABOUT)}
+                      className="inline-flex items-center gap-3 px-8 py-4 bg-transparent border border-white/30 text-white font-bold uppercase tracking-widest hover:bg-white/10 hover:border-white/60 transition-colors text-sm"
+                      aria-label="Conheça a empresa"
+                    >
+                      Conheça a Empresa
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -303,6 +336,19 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
             <div className="flex flex-col items-center justify-center py-20 border border-white/5 bg-white/5">
               <Loader2 size={48} className="text-termo-yellow animate-spin mb-4" />
               <p className="text-gray-500 font-bold uppercase tracking-wider text-sm">Carregando destaques...</p>
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 border border-white/10 bg-white/5 text-center px-6">
+              <p className="text-gray-400 text-lg font-medium mb-6">
+                Explore nosso catálogo completo de peças sinterizadas.
+              </p>
+              <button
+                onClick={() => navigate(PageRoute.CATALOG)}
+                className="inline-flex items-center gap-3 px-8 py-4 bg-termo-yellow text-termo-dark font-black uppercase tracking-widest hover:bg-white transition-colors group text-sm"
+              >
+                Acessar o Catálogo
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

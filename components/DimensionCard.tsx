@@ -1,14 +1,13 @@
 import React from 'react';
 import { Product } from '../types';
-import { Ruler, Tag, Star } from 'lucide-react';
+import { Ruler, Star, Car, ChevronRight, Info } from 'lucide-react';
+import { ProductCodeBadges } from './ProductCodeBadges';
 
 interface DimensionCardProps {
   product: Product;
   navigate: (route: string) => void;
   onOpenDetail?: () => void;
 }
-
-export const GENERIC_DIMENSION_IMG = 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80';
 
 export const DIMENSION_LABELS: Record<string, { label: string; short: string }> = {
   dintmin: { label: 'Diâmetro interno mínimo', short: 'Ø int. mín' },
@@ -48,37 +47,147 @@ export const DIMENSION_ALIASES: Record<string, string> = {
   hpesmax: 'hpesmax', hpes_max: 'hpesmax', altura_pescoco_maxima: 'hpesmax', altura_pescoco_max: 'hpesmax',
 };
 
+// Formata obrigatoriamente como code-tagDimensao (ex: 0212-STD, 1724-STD, 1724-2X)
+export function getFullProductCode(code?: string, name?: string): { fullCode: string; tag: string } {
+  if (!code) return { fullCode: 'S/C', tag: 'STD' };
+  const trimmed = code.trim();
+  const match = trimmed.match(/-(STD|[0-9]+X|LUMAG|[\w]+)$/i);
+  if (match) {
+    return { fullCode: trimmed, tag: match[1].toUpperCase() };
+  }
+  if (name) {
+    const nameMatch = name.match(/-(STD|[0-9]+X|LUMAG|[\w]+)$/i);
+    if (nameMatch) {
+      return { fullCode: `${trimmed}-${nameMatch[1].toUpperCase()}`, tag: nameMatch[1].toUpperCase() };
+    }
+  }
+  // Se terminar em 02, 03... (ex: 172403 -> 1724-3X)
+  if (trimmed.length > 4 && /0[2-9]$/.test(trimmed)) {
+    const base = trimmed.slice(0, -2);
+    const suffix = parseInt(trimmed.slice(-2), 10) + 'X';
+    return { fullCode: `${base}-${suffix}`, tag: suffix };
+  }
+  return { fullCode: `${trimmed}-STD`, tag: 'STD' };
+}
+
+// Remove tag de dimensão do título (ex: KIT 0212-2001-STD -> KIT 0212-2001)
+export function getCleanProductName(name?: string): string {
+  if (!name) return 'Produto';
+  return name
+    .replace(/-(?:STD|[0-9]+X|LUMAG|[\w]+)$/i, '')
+    .replace(/\s+(?:STD|[0-9]+X)$/i, '')
+    .trim();
+}
+
+// Extrai metadados completos de um produto
+export function extractProductMeta(product: Product) {
+  let parsedSpecs: any = product.specs;
+  if (typeof parsedSpecs === 'string') {
+    try { parsedSpecs = JSON.parse(parsedSpecs); } catch { parsedSpecs = {}; }
+  }
+
+  // Material
+  let material = '';
+  if (product.material && product.material.trim() && product.material.toLowerCase() !== 'diversos') {
+    material = product.material.trim().toUpperCase();
+  }
+  if (!material && parsedSpecs && typeof parsedSpecs === 'object') {
+    for (const [k, v] of Object.entries(parsedSpecs)) {
+      if (/^material/i.test(k.trim()) && v) {
+        const str = String(v).trim().toUpperCase();
+        material = str === 'BR' ? 'BRONZE' : str === 'FE' ? 'FERRO' : str;
+        break;
+      }
+    }
+  }
+
+  // Montadora e Marca
+  const montadorasSet = new Set<string>();
+  const marcasSet = new Set<string>();
+  const aplicacoesList: string[] = [];
+
+  const addMontadoras = (raw: any) => {
+    if (!raw) return;
+    String(raw).split(/[,;/|]+/).map(s => s.trim()).filter(Boolean).forEach(m => montadorasSet.add(m));
+  };
+  const addMarcas = (raw: any) => {
+    if (!raw) return;
+    String(raw).split(/[,;/|]+/).map(s => s.trim()).filter(Boolean).forEach(m => marcasSet.add(m));
+  };
+
+  if (parsedSpecs && typeof parsedSpecs === 'object') {
+    if (parsedSpecs.montadora) addMontadoras(parsedSpecs.montadora);
+    if (parsedSpecs.marca) addMarcas(parsedSpecs.marca);
+
+    if (Array.isArray(parsedSpecs.aplicacoes)) {
+      parsedSpecs.aplicacoes.forEach((app: any) => {
+        if (app.montadora) addMontadoras(app.montadora);
+        if (app.marca) addMarcas(app.marca);
+        if (app.descricao) {
+          const desc = String(app.descricao).trim();
+          const prefix = app.montadora ? `${app.montadora}: ` : '';
+          aplicacoesList.push(`${prefix}${desc}`);
+        }
+      });
+    }
+
+    Object.entries(parsedSpecs).forEach(([k, v]) => {
+      if (/aplica/i.test(k) && typeof v === 'string') {
+        aplicacoesList.push(v.trim());
+      }
+    });
+  }
+
+  if (product.applied && product.applied.trim()) {
+    const parts = product.applied.split('|').map(s => s.trim()).filter(Boolean);
+    parts.forEach(p => {
+      if (!aplicacoesList.includes(p)) aplicacoesList.push(p);
+    });
+  }
+
+  const montadorasList = Array.from(montadorasSet).filter(Boolean);
+  const marcasList = Array.from(marcasSet).filter(Boolean);
+  const montadora = montadorasList.join(', ');
+  const marca = marcasList.join(', ');
+  const codigobarra = product.codigobarra || parsedSpecs?.codigo_barra || '';
+  let pesoliquido = product.pesoliquido || parsedSpecs?.peso_liquido || '';
+  if (pesoliquido === '0.00000' || pesoliquido === '0' || pesoliquido === '0.0') {
+    pesoliquido = '';
+  }
+
+  return {
+    material,
+    montadora,
+    marca,
+    montadorasList,
+    marcasList,
+    codigobarra,
+    pesoliquido,
+    aplicacoes: Array.from(new Set(aplicacoesList))
+  };
+}
+
 export const DimensionCard: React.FC<DimensionCardProps> = ({ product, navigate, onOpenDetail }) => {
   const dimensionEntries: { key: string; label: string; short: string; val: string }[] = [];
   const processedKeys = new Set<string>();
 
-  // Parse specs if it's a string
   let parsedSpecs: any = product.specs;
   if (typeof parsedSpecs === 'string') {
-    try {
-      parsedSpecs = JSON.parse(parsedSpecs);
-    } catch {
-      parsedSpecs = {};
-    }
+    try { parsedSpecs = JSON.parse(parsedSpecs); } catch { parsedSpecs = {}; }
   }
 
-  // 1. Checa as 16 dimensões padronizadas diretamente nos campos
+  // Medidas padronizadas
   Object.entries(DIMENSION_LABELS).forEach(([dimKey, meta]) => {
     const val = (product as any)[dimKey] || 
                 (product.dimensions && (product.dimensions as any)[dimKey]) || 
                 (parsedSpecs && typeof parsedSpecs === 'object' && parsedSpecs[dimKey]);
-    if (val !== null && val !== undefined && String(val).trim() !== '') {
+    const isZero = val === '0' || val === '0.0' || val === '0.000' || parseFloat(String(val)) === 0;
+    if (val !== null && val !== undefined && String(val).trim() !== '' && !isZero) {
       processedKeys.add(dimKey);
-      dimensionEntries.push({
-        key: dimKey,
-        label: meta.label,
-        short: meta.short,
-        val: String(val)
-      });
+      dimensionEntries.push({ key: dimKey, label: meta.label, short: meta.short, val: String(val) });
     }
   });
 
-  // 2. Se houver specs/dimensions, checa exclusivamente por aliases dimensionais conhecidos
   const source = product.dimensions || parsedSpecs;
   if (source && typeof source === 'object') {
     Object.entries(source).forEach(([rawKey, rawVal]) => {
@@ -86,18 +195,17 @@ export const DimensionCard: React.FC<DimensionCardProps> = ({ product, navigate,
       const standardKey = DIMENSION_ALIASES[normalizedKey];
       if (standardKey && !processedKeys.has(standardKey)) {
         const meta = DIMENSION_LABELS[standardKey];
-        if (meta && rawVal !== null && rawVal !== undefined && String(rawVal).trim() !== '') {
+        const isZero = rawVal === '0' || rawVal === '0.0' || rawVal === '0.000' || parseFloat(String(rawVal)) === 0;
+        if (meta && rawVal !== null && rawVal !== undefined && String(rawVal).trim() !== '' && !isZero) {
           processedKeys.add(standardKey);
-          dimensionEntries.push({
-            key: standardKey,
-            label: meta.label,
-            short: meta.short,
-            val: String(rawVal)
-          });
+          dimensionEntries.push({ key: standardKey, label: meta.label, short: meta.short, val: String(rawVal) });
         }
       }
     });
   }
+
+  const cleanTitle = getCleanProductName(product.name);
+  const meta = extractProductMeta(product);
 
   const handleClick = () => {
     if (onOpenDetail) {
@@ -107,75 +215,64 @@ export const DimensionCard: React.FC<DimensionCardProps> = ({ product, navigate,
     }
   };
 
-  const productImage = (product.images && product.images.length > 0 && product.images[0]) 
-    ? product.images[0] 
-    : GENERIC_DIMENSION_IMG;
+  const hasInfo = Boolean(meta.material || meta.pesoliquido);
 
   return (
     <div 
       onClick={handleClick}
-      className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-termo-yellow flex flex-col h-auto cursor-pointer"
+      className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-termo-yellow flex flex-col h-full cursor-pointer"
     >
-      {/* Top Banner with Product Image (1:1 Square Cropped) */}
-      <div className="relative aspect-square w-full bg-gray-100 overflow-hidden flex items-center justify-center border-b border-gray-100">
-        <img 
-          src={productImage} 
-          alt={product.name} 
-          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-        />
-        
-        {/* Category Badge */}
-        <div className="absolute top-3 left-3 flex gap-2">
-          <span className="px-2.5 py-1 bg-termo-dark/90 text-termo-yellow text-[11px] font-bold uppercase tracking-wider rounded backdrop-blur-sm shadow">
-            {product.category || 'Peça Sinterizada'}
-          </span>
+      <div className="p-4 sm:p-5 flex flex-col flex-1 justify-between gap-4">
+        <div>
+          {/* Header: tags + destaque */}
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <ProductCodeBadges product={product} />
+
+            {product.isFavorite && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-termo-yellowDark bg-amber-50 px-2 py-0.5 rounded border border-amber-200 flex-shrink-0">
+                <Star size={11} fill="currentColor" />
+                Destaque
+              </span>
+            )}
+          </div>
+
+          {/* Nome do Produto limpo (sem código nem tag de dimensão) */}
+          <h3 className="text-base sm:text-lg font-display font-black text-termo-dark group-hover:text-termo-yellowDark transition-colors line-clamp-2 mb-3">
+            {cleanTitle}
+          </h3>
+
+          <div className="space-y-3">
+            {/* Bloco: Informações Gerais (Apenas Material e Peso Líquido) */}
+            {hasInfo && (
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 text-xs space-y-2">
+                <div className="text-[10px] font-bold uppercase text-gray-500 tracking-wider mb-1 flex items-center gap-1">
+                  <Info size={11} className="text-termo-yellowDark" />
+                  <span>Informações Gerais</span>
+                </div>
+                {meta.material && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-500 font-medium">Material:</span>
+                    <span className="font-bold text-termo-dark">{meta.material}</span>
+                  </div>
+                )}
+                {meta.pesoliquido && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-500 font-medium">Peso Líquido:</span>
+                    <span className="font-mono font-bold text-termo-dark">{meta.pesoliquido} kg</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Favorite Badge */}
-        {product.isFavorite && (
-          <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-termo-yellow text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow flex items-center gap-1 border border-white/10">
-            <Star size={12} fill="currentColor" className="text-termo-yellow" />
-            <span>Destaque</span>
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="p-5 flex flex-col">
-        {/* Code */}
-        {product.code && (
-          <div className="flex items-center gap-1.5 text-xs font-mono text-termo-yellowDark font-bold mb-1">
-            <Tag size={13} />
-            <span>{product.code}</span>
-          </div>
-        )}
-
-        {/* Name */}
-        <h3 className={`text-base font-display font-bold text-termo-dark group-hover:text-termo-yellowDark transition-colors line-clamp-2 ${dimensionEntries.length > 0 ? 'mb-3' : 'mb-0'}`}>
-          {product.name}
-        </h3>
-
-        {/* Dimension specs table */}
-        {dimensionEntries.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 mt-2">
-            <div className="text-[11px] font-bold uppercase text-gray-500 tracking-wider mb-2 flex items-center gap-1">
-              <Ruler size={12} />
-              <span>Medidas e Dimensões</span>
-            </div>
-            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-              {dimensionEntries.map((dim, idx) => (
-                <div key={idx} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-200/60 last:border-0" title={dim.key}>
-                  <span className="text-gray-700 font-medium text-xs pr-2">
-                    {dim.label}:
-                  </span>
-                  <span className="text-termo-dark font-mono font-bold text-xs flex-shrink-0">
-                    {dim.val}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Rodapé do Card: sempre 'Ver produto' */}
+        <div className="mt-2 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-gray-500 group-hover:text-termo-dark transition-colors">
+          <span className="uppercase tracking-wider text-[11px] font-bold">
+            Ver produto
+          </span>
+          <ChevronRight size={14} className="transform group-hover:translate-x-1 transition-transform text-termo-yellow" />
+        </div>
       </div>
     </div>
   );

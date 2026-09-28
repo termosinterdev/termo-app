@@ -9,19 +9,26 @@ import { About } from './pages/About';
 import { PageRoute } from './types';
 
 
+const getHashRoute = (): string => {
+  if (typeof window === 'undefined') return PageRoute.HOME;
+  const raw = window.location.hash.replace(/^#\/?/, '').trim();
+  return raw || PageRoute.HOME;
+};
+
+const pageTitles: Record<string, string> = {
+  [PageRoute.HOME]: 'Termosinter | Metalurgia do Pó',
+  [PageRoute.CATALOG]: 'Catálogo Técnico | Termosinter',
+  [PageRoute.ABOUT]: 'A Empresa | Termosinter',
+  [PageRoute.ADMIN]: 'Admin | Termosinter',
+};
+
 const App: React.FC = () => {
-  const [currentRoute, setCurrentRoute] = useState<string>(PageRoute.HOME);
+  const [currentRoute, setCurrentRoute] = useState<string>(getHashRoute);
 
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') || PageRoute.HOME;
-      if (document.startViewTransition) {
-        document.startViewTransition(() => {
-          setCurrentRoute(hash);
-        });
-      } else {
-        setCurrentRoute(hash);
-      }
+      const hash = getHashRoute();
+      setCurrentRoute(hash);
     };
 
     handleHashChange();
@@ -30,32 +37,47 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  // Atualizar título da aba conforme rota
+  useEffect(() => {
+    const cleanRoute = currentRoute.replace(/^#\/?/, '').replace(/^\//, '');
+    if (cleanRoute.startsWith('product/')) {
+      document.title = 'Detalhe do Produto | Termosinter';
+    } else {
+      const routeKey = `/${cleanRoute}`;
+      document.title = pageTitles[routeKey] || 'Termosinter | Metalurgia do Pó';
+    }
+  }, [currentRoute]);
+
   const navigate = (route: string) => {
-    window.location.hash = route;
+    const clean = route.replace(/^#\/?/, '');
+    window.location.hash = clean;
     window.scrollTo(0, 0);
   };
 
   const renderPage = () => {
-    if (currentRoute.startsWith('product/')) {
-      const productIdStr = currentRoute.split('/')[1];
-      const productId = parseInt(productIdStr, 10);
-      if (!isNaN(productId)) {
-        return <ProductDetail productId={productId} navigate={navigate} />;
+    const cleanRoute = currentRoute.replace(/^#\/?/, '').replace(/^\//, '');
+
+    if (cleanRoute.startsWith('product/')) {
+      const productIdStr = cleanRoute.split('/')[1];
+      if (productIdStr) {
+        return <ProductDetail productId={productIdStr} navigate={navigate} />;
       }
     }
 
-    switch (currentRoute) {
-      case PageRoute.HOME:
-        return <Home navigate={navigate} />;
-      case PageRoute.ABOUT:
-        return <About navigate={navigate} />;
-      case PageRoute.CATALOG:
-        return <Catalog navigate={navigate} />;
-      case PageRoute.ADMIN:
-        return <Admin />;
-      default:
-        return <Home navigate={navigate} />;
+    if (cleanRoute === '' || cleanRoute === 'home') {
+      return <Home navigate={navigate} />;
     }
+    if (cleanRoute === 'catalogo') {
+      return <Catalog navigate={navigate} />;
+    }
+    if (cleanRoute === 'sobre') {
+      return <About navigate={navigate} />;
+    }
+    if (cleanRoute === 'admin') {
+      return <Admin />;
+    }
+
+    return <Home navigate={navigate} />;
   };
 
   return (

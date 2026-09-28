@@ -1,6 +1,7 @@
 import React from 'react';
 import { Product } from '../types';
 import { ArrowRight } from 'lucide-react';
+import { ProductCodeBadges } from './ProductCodeBadges';
 
 interface ProductCardProps {
   product: Product;
@@ -23,22 +24,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, navigate }) =
         {/* Subtle overlay on hover */}
         <div className="absolute inset-0 bg-termo-yellow/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-        {/* Category badge */}
-        <div className="absolute top-3 left-3 z-10">
-          <span className="px-2.5 py-1 bg-termo-dark text-termo-yellow text-[10px] font-mono font-black uppercase tracking-widest shadow-md">
-            {product.category}
-          </span>
-        </div>
-
         {/* Yellow accent bar on top */}
         <div className="absolute top-0 left-0 w-full h-1 bg-termo-yellow" />
       </div>
 
       {/* Content Area */}
       <div className="p-5 flex flex-col flex-grow">
-        <h3 className="text-base font-display font-black text-termo-dark group-hover:text-termo-dark transition-colors leading-tight mb-1 line-clamp-2">
+        <h3 className="text-base font-display font-black text-termo-dark group-hover:text-termo-dark transition-colors leading-tight mb-1.5 line-clamp-2">
           {product.name}
         </h3>
+
+        <ProductCodeBadges product={product} className="mb-2" />
 
         {product.material && (
           <p className="text-xs text-gray-500 font-mono truncate mb-2">

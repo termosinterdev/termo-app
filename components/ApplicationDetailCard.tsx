@@ -1,437 +1,395 @@
 import React, { useEffect, useMemo } from 'react';
-import { Product } from '../types';
-import { X, Tag, Car, FileText, Ruler, ArrowRight, ArrowUpRight, Settings } from 'lucide-react';
-import { GENERIC_DIMENSION_IMG, DIMENSION_LABELS, DIMENSION_ALIASES } from './DimensionCard';
+import { Product, ApplicationItem } from '../types';
+import { X, Ruler, ArrowUpRight, Layers } from 'lucide-react';
+import { DIMENSION_LABELS, DIMENSION_ALIASES, extractProductMeta, getCleanProductName, getFullProductCode } from './DimensionCard';
+import { ProductCodeBadges } from './ProductCodeBadges';
 
 interface ApplicationDetailCardProps {
-  product: Product;
+  application: ApplicationItem;
   allProducts?: Product[];
   onClose: () => void;
-  onSelectProduct?: (product: Product) => void;
+  onViewInProducts?: (pieceCodes: string[]) => void;
   navigate?: (route: string) => void;
 }
 
-export const ApplicationDetailCard: React.FC<ApplicationDetailCardProps> = ({ 
-  product, 
-  allProducts = [], 
-  onClose, 
-  onSelectProduct, 
-  navigate 
+// Extrai entradas de dimensão de um produto, filtrando zeros
+function extractDimensions(p: Product) {
+  const entries: { key: string; label: string; short: string; val: string }[] = [];
+  const processed = new Set<string>();
+
+  let parsedSpecs: any = p.specs;
+  if (typeof parsedSpecs === 'string') {
+    try { parsedSpecs = JSON.parse(parsedSpecs); } catch { parsedSpecs = {}; }
+  }
+
+  Object.entries(DIMENSION_LABELS).forEach(([dimKey, meta]) => {
+    const val = (p as any)[dimKey] ||
+                (p.dimensions && (p.dimensions as any)[dimKey]) ||
+                (parsedSpecs && typeof parsedSpecs === 'object' && parsedSpecs[dimKey]);
+    const isZero = val === '0' || val === '0.0' || val === '0.000' || parseFloat(String(val)) === 0;
+    if (val !== null && val !== undefined && String(val).trim() !== '' && !isZero) {
+      processed.add(dimKey);
+      entries.push({ key: dimKey, label: meta.label, short: meta.short, val: String(val) });
+    }
+  });
+
+  const source = p.dimensions || parsedSpecs;
+  if (source && typeof source === 'object') {
+    Object.entries(source).forEach(([rawKey, rawVal]) => {
+      const normalizedKey = rawKey.toLowerCase().replace(/[\s\-_.]/g, '');
+      const standardKey = DIMENSION_ALIASES[normalizedKey];
+      if (standardKey && !processed.has(standardKey)) {
+        const meta = DIMENSION_LABELS[standardKey];
+        const isZero = rawVal === '0' || rawVal === '0.0' || rawVal === '0.000' || parseFloat(String(rawVal)) === 0;
+        if (meta && rawVal !== null && rawVal !== undefined && String(rawVal).trim() !== '' && !isZero) {
+          processed.add(standardKey);
+          entries.push({ key: standardKey, label: meta.label, short: meta.short, val: String(rawVal) });
+        }
+      }
+    });
+  }
+
+  return entries;
+}
+
+// Extrai a tag de dimensão específica (STD, 2X, 3X) para componentes dependentes
+export function getTagDimensao(code?: string, appCode?: string): string {
+  if (!code) return 'STD';
+  const match = code.match(/-(STD|[0-9]+X|LUMAG|[\w]+)$/i);
+  if (match) return match[1].toUpperCase();
+  if (appCode && code.startsWith(appCode)) {
+    const rest = code.slice(appCode.length).replace(/^-/, '');
+    if (rest === '02' || rest === '2') return '2X';
+    if (rest === '03' || rest === '3') return '3X';
+    if (rest === '04' || rest === '4') return '4X';
+    if (rest) return rest.toUpperCase();
+  }
+  return 'STD';
+}
+
+interface PieceSlot {
+  title: string;
+  code: string;
+  products: Product[];
+  standardProduct?: Product;
+}
+
+export const ApplicationDetailCard: React.FC<ApplicationDetailCardProps> = ({
+  application,
+  allProducts = [],
+  onClose,
+  onViewInProducts
 }) => {
-  // Fechar com a tecla ESC
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  // Bloquear o scroll da página enquanto o modal estiver aberto
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
+    return () => { document.body.style.overflow = originalOverflow; };
   }, []);
 
-  // Extrair todas as medidas e dimensões da peça
-  const dimensionEntries = useMemo(() => {
-    const entries: { key: string; label: string; short: string; val: string }[] = [];
-    const processed = new Set<string>();
+  // Mapeia os slots de peças da aplicação (Motriz, Coletor, Intermediários)
+  const pieceSlots = useMemo<PieceSlot[]>(() => {
+    const slots: PieceSlot[] = [];
+    const usedCodes = new Set<string>();
 
-    let parsedSpecs: any = product.specs;
-    if (typeof parsedSpecs === 'string') {
-      try { parsedSpecs = JSON.parse(parsedSpecs); } catch { parsedSpecs = {}; }
-    }
-
-    // 1. Campos dimensionais padronizados
-    Object.entries(DIMENSION_LABELS).forEach(([dimKey, meta]) => {
-      const val = (product as any)[dimKey] || 
-                  (product.dimensions && (product.dimensions as any)[dimKey]) || 
-                  (parsedSpecs && typeof parsedSpecs === 'object' && parsedSpecs[dimKey]);
-      if (val !== null && val !== undefined && String(val).trim() !== '') {
-        processed.add(dimKey);
-        entries.push({
-          key: dimKey,
-          label: meta.label,
-          short: meta.short,
-          val: String(val)
-        });
-      }
-    });
-
-    // 2. Aliases dimensionais conhecidos
-    const source = product.dimensions || parsedSpecs;
-    if (source && typeof source === 'object') {
-      Object.entries(source).forEach(([rawKey, rawVal]) => {
-        const normalizedKey = rawKey.toLowerCase().replace(/[\s\-_.]/g, '');
-        const standardKey = DIMENSION_ALIASES[normalizedKey];
-        if (standardKey && !processed.has(standardKey)) {
-          const meta = DIMENSION_LABELS[standardKey];
-          if (meta && rawVal !== null && rawVal !== undefined && String(rawVal).trim() !== '') {
-            processed.add(standardKey);
-            entries.push({
-              key: standardKey,
-              label: meta.label,
-              short: meta.short,
-              val: String(rawVal)
-            });
-          }
+    const getMatchingProds = (code: string): Product[] => {
+      const clean = code.trim().toLowerCase();
+      if (!clean) return [];
+      const matched = allProducts.filter(p => {
+        if (p.codigoligacaoproduto && p.codigoligacaoproduto.trim().toLowerCase() === clean) return true;
+        if (p.code) {
+          const c = p.code.toLowerCase().trim();
+          return c === clean || c.startsWith(`${clean}-`) || c.startsWith(clean);
         }
-      });
-    }
-
-    return entries;
-  }, [product]);
-
-  // Extrair referências de produtos do catálogo vs veículos/aplicações gerais
-  const { matchedProducts, otherApplications } = useMemo(() => {
-    const matchedMap = new Map<number, Product>();
-    const textSources: string[] = [];
-
-    if (product.applied) textSources.push(product.applied);
-    
-    // Checa em specs por chaves relacionadas a aplicação
-    if (product.specs && typeof product.specs === 'object') {
-      Object.entries(product.specs).forEach(([k, v]) => {
-        if (/aplica|veicul|compativ|uso/i.test(k) && v) {
-          textSources.push(String(v));
-        }
-      });
-    }
-
-    const allAppliedText = textSources.join(' \n ');
-    const allAppliedTextUpper = allAppliedText.toUpperCase();
-
-    if (allProducts && allProducts.length > 0) {
-      allProducts.forEach(p => {
-        if (p.id === product.id) return;
-
-        let isMatch = false;
-
-        // 1. Busca flexível por código
-        if (p.code && p.code.trim().length >= 3) {
-          const rawCode = p.code.trim().toUpperCase();
-          const baseCode = rawCode.replace(/^KIT\s+|-STD$/g, '').trim(); // ex: 0253
-          
-          const codeVariants = [
-            rawCode,
-            rawCode.replace(/^KIT\s+/, ''), // sem o KIT inicial
-            `KIT ${rawCode.replace(/^KIT\s+/, '')}` // garante com KIT
-          ];
-
-          isMatch = codeVariants.some(variant => 
-            variant.length >= 3 && allAppliedTextUpper.includes(variant)
-          );
-          
-          // Fallback pra base code numérico (ex: "0253") se não achou exato
-          if (!isMatch && baseCode.length >= 4) {
-            if (allAppliedTextUpper.includes(`KIT ${baseCode}`) || 
-                allAppliedTextUpper.includes(`${baseCode}-STD`) || 
-                allAppliedTextUpper.includes(`${baseCode} STD`)) {
-               isMatch = true;
-            }
-          }
-        }
-
-        // 2. Busca por nome do produto
-        if (!isMatch && p.name && p.name.trim().length >= 4) {
-          const cleanName = p.name.trim().toUpperCase();
-          if (allAppliedTextUpper.includes(cleanName)) {
-            isMatch = true;
-          }
-        }
-
-        if (isMatch) {
-          matchedMap.set(p.id, p);
-        }
-      });
-    }
-
-    // Extrair linhas de aplicação geral
-    const rawLines = allAppliedText
-      .split(/[\n;]/)
-      .map(s => s.trim())
-      .filter(Boolean);
-
-    const other: string[] = [];
-    rawLines.forEach(line => {
-      const lineUpper = line.toUpperCase();
-      // Se a linha for uma citação explícita do código, e já matchamos ele, ignoramos para não poluir
-      const isOnlyMatchedProduct = Array.from(matchedMap.values()).some(p => {
-        if (!p.code) return false;
-        const codeBase = p.code.toUpperCase().replace(/^KIT\s+/, '');
-        return lineUpper.includes(codeBase) && (lineUpper.includes('USO NO') || lineUpper.includes('USO EM') || lineUpper.includes('KIT'));
+        return false;
       });
 
-      if (!isOnlyMatchedProduct && !other.includes(line)) {
-        other.push(line);
-      }
-    });
+      // Remove duplicatas por id
+      const unique = new Map<number, Product>();
+      matched.forEach(p => unique.set(p.id, p));
+      const prods = Array.from(unique.values());
 
-    return {
-      matchedProducts: Array.from(matchedMap.values()),
-      otherApplications: other.length > 0 ? other : (product.applied ? [product.applied] : [])
+      // Ordena garantindo que a peça padrão (STD) fique sempre em primeiro lugar
+      prods.sort((a, b) => {
+        const getRank = (p: Product) => {
+          const c = (p.code || '').trim().toUpperCase();
+          const { tag, fullCode } = getFullProductCode(p.code, p.name);
+          const fullUpper = fullCode.toUpperCase();
+          const cleanUpper = clean.toUpperCase();
+
+          // 1. Exatamente code-STD (ex: 1011-STD)
+          if (c === `${cleanUpper}-STD` || fullUpper === `${cleanUpper}-STD`) return 1;
+          // 2. Tag STD ou código terminado em -STD
+          if (tag === 'STD' || c.endsWith('-STD') || fullUpper.endsWith('-STD')) return 2;
+          // 3. Código base exato (ex: 1011)
+          if (c === cleanUpper) return 3;
+          // 4. Sobretamanhos ordenados: 2X, 3X, 4X...
+          const matchX = tag.match(/^([0-9]+)X$/);
+          if (matchX) return 10 + parseInt(matchX[1], 10);
+          return 50;
+        };
+
+        return getRank(a) - getRank(b);
+      });
+
+      return prods;
     };
-  }, [product, allProducts]);
 
-  // Formatar o campo spec como bloco de texto de observações
-  const formatSpecsAsText = () => {
-    if (!product.specs) return 'Nenhuma observação técnica registrada.';
-    if (typeof product.specs === 'string') return product.specs;
-    if (typeof product.specs === 'object') {
-      const lines = Object.entries(product.specs).map(([k, v]) => {
-        return `• ${k.charAt(0).toUpperCase() + k.slice(1)}: ${typeof v === 'object' ? JSON.stringify(v) : String(v)}`;
+    const createSlot = (title: string, rawCode: string): PieceSlot => {
+      const code = rawCode.trim();
+      const prods = getMatchingProds(code);
+      const stdProd = prods.find(p => {
+        const { tag, fullCode } = getFullProductCode(p.code, p.name);
+        const c = (p.code || '').trim().toUpperCase();
+        return tag === 'STD' || c.endsWith('-STD') || fullCode.toUpperCase().endsWith('-STD');
+      }) || prods[0];
+
+      return {
+        title,
+        code,
+        products: prods,
+        standardProduct: stdProd
+      };
+    };
+
+    if (application.itemmotriz && application.itemmotriz.trim()) {
+      const code = application.itemmotriz.trim();
+      usedCodes.add(code);
+      slots.push(createSlot('Motriz', code));
+    }
+
+    if (application.itemcoletor && application.itemcoletor.trim()) {
+      const code = application.itemcoletor.trim();
+      usedCodes.add(code);
+      slots.push(createSlot('Coletor', code));
+    }
+
+    if (application.itemintermediario1 && application.itemintermediario1.trim()) {
+      const code = application.itemintermediario1.trim();
+      usedCodes.add(code);
+      slots.push(createSlot('Intermediário 1', code));
+    }
+
+    if (application.itemintermediario2 && application.itemintermediario2.trim()) {
+      const code = application.itemintermediario2.trim();
+      usedCodes.add(code);
+      slots.push(createSlot('Intermediário 2', code));
+    }
+
+    if (application.itemintermediario3 && application.itemintermediario3.trim()) {
+      const code = application.itemintermediario3.trim();
+      usedCodes.add(code);
+      slots.push(createSlot('Intermediário 3', code));
+    }
+
+    // Se houver mais códigos em pieceCodes que não entraram nos slots nomeados
+    if (application.pieceCodes) {
+      application.pieceCodes.forEach((code, idx) => {
+        if (!usedCodes.has(code)) {
+          usedCodes.add(code);
+          slots.push(createSlot(`Intermediário ${idx + 1}`, code));
+        }
       });
-      return lines.length > 0 ? lines.join('\n') : 'Nenhuma observação técnica registrada.';
     }
-    return String(product.specs);
-  };
 
-  const handleOpenProduct = (targetProd: Product) => {
-    if (onSelectProduct) {
-      onSelectProduct(targetProd);
-    } else if (navigate) {
-      navigate(`product/${targetProd.id}`);
-    }
-  };
+    return slots;
+  }, [application, allProducts]);
+
+  const hasAnyProducts = pieceSlots.some(s => s.products.length > 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-10">
-      {/* Backdrop com blur */}
-      <div 
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" 
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-10">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Modal Card Container */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 z-10 animate-in fade-in zoom-in-95 duration-200">
-        
-        {/* Modal Header */}
-        <div className="bg-termo-dark text-white p-6 flex items-start justify-between relative border-b-2 border-termo-yellow">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              {product.code ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-termo-yellow text-termo-dark text-xs font-mono font-bold rounded shadow-sm">
-                  <Tag size={13} />
-                  {product.code}
-                </span>
-              ) : null}
-              <span className="px-2.5 py-0.5 bg-white/10 text-gray-300 text-xs font-semibold uppercase tracking-wider rounded">
-                {product.category || 'Catálogo de Aplicação'}
+      {/* Modal */}
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden border border-gray-100 z-10 animate-in fade-in zoom-in-95 duration-200">
+
+        {/* Topo do card */}
+        <div className="bg-termo-dark text-white px-6 py-5 flex items-center justify-between relative border-b-2 border-termo-yellow">
+          <div className="flex flex-col gap-1 pr-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-termo-yellow/90">
+                Aplicação Automotiva
               </span>
-            </div>
-            <h2 className="text-2xl font-display font-bold text-white leading-snug">
-              {product.name}
-            </h2>
-          </div>
-
-          <button 
-            onClick={onClose}
-            aria-label="Fechar"
-            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-          >
-            <X size={24} />
-          </button>
-        </div>
-
-        {/* Modal Body (Scrollable) */}
-        <div className="p-6 overflow-y-auto space-y-6">
-          
-          {/* Imagem do Produto */}
-          <div className="flex justify-center">
-            <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-100 aspect-square w-48 sm:w-56">
-              <img 
-                src={(product.images && product.images.length > 0 && product.images[0]) ? product.images[0] : GENERIC_DIMENSION_IMG} 
-                alt={product.name} 
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-
-          {/* Card de Medidas e Dimensões (Sigla, Nome e Valor) */}
-          {dimensionEntries.length > 0 && (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-termo-dark uppercase tracking-wider flex items-center gap-2">
-                  <Ruler size={18} className="text-termo-yellowDark" />
-                  <span>Medidas e Dimensões</span>
-                </h3>
-                <span className="text-[11px] font-bold text-gray-500 bg-gray-200/80 px-2 py-0.5 rounded-full">
-                  {dimensionEntries.length} medidas
+              {application.montadora && (
+                <span className="px-2.5 py-0.5 bg-white/10 text-white text-xs font-bold uppercase tracking-wider rounded border border-white/15">
+                  {application.montadora}
                 </span>
-              </div>
-              
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100 text-gray-600 font-bold uppercase tracking-wider border-b border-gray-200">
-                      <th className="py-2.5 px-3.5 whitespace-nowrap w-0">Sigla</th>
-                      <th className="py-2.5 px-3.5">Dimensão</th>
-                      <th className="py-2.5 px-3.5 text-right w-24">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {dimensionEntries.map((dim, idx) => (
-                      <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
-                        <td className="py-2 px-3.5 font-mono font-bold text-termo-dark whitespace-nowrap w-0">
-                          <span className="inline-block px-1.5 py-0.5 bg-gray-100 rounded text-gray-700 whitespace-nowrap">
-                            {dim.short}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3.5 text-gray-700 font-medium">
-                          {dim.label}
-                        </td>
-                        <td className="py-2 px-3.5 text-right font-mono font-bold text-termo-dark">
-                          {dim.val}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Seção de Aplicação & Veículos Compatíveis */}
-          <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-termo-dark uppercase tracking-wider flex items-center gap-2">
-                <Car size={18} className="text-termo-yellowDark" />
-                <span>Aplicação & Veículos Compatíveis</span>
-              </h3>
-              {matchedProducts.length > 0 && (
-                <span className="text-[11px] font-bold text-termo-yellowDark bg-amber-100 px-2 py-0.5 rounded-full">
-                  {matchedProducts.length} no catálogo
+              )}
+              {application.marca && (
+                <span className="px-2 py-0.5 bg-termo-yellow text-termo-dark text-xs font-mono font-black uppercase rounded shadow-sm">
+                  {application.marca}
                 </span>
               )}
             </div>
-
-            {/* 1. Produtos do Catálogo Vinculados (Exibidos Primeiro) */}
-            {matchedProducts.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  Peças / Kits disponíveis no catálogo:
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {matchedProducts.map(matched => (
-                    <button
-                      key={matched.id}
-                      type="button"
-                      onClick={() => handleOpenProduct(matched)}
-                      className="flex items-center gap-3 p-3 bg-white border border-amber-200 hover:border-termo-yellow rounded-xl text-left shadow-sm hover:shadow-md transition-all group cursor-pointer"
-                    >
-                      <img 
-                        src={(matched.images && matched.images.length > 0 && matched.images[0]) ? matched.images[0] : GENERIC_DIMENSION_IMG} 
-                        alt={matched.name}
-                        className="w-12 h-12 object-contain rounded-lg bg-gray-50 border border-gray-100 flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        {matched.code && (
-                          <span className="inline-block px-1.5 py-0.5 bg-termo-dark text-termo-yellow font-mono text-[10px] font-bold rounded mb-1">
-                            {matched.code}
-                          </span>
-                        )}
-                        <h4 className="text-xs font-bold text-termo-dark group-hover:text-termo-yellowDark transition-colors truncate">
-                          {matched.name}
-                        </h4>
-                        <span className="text-[10px] text-gray-500">{matched.category}</span>
-                      </div>
-                      <ArrowUpRight size={16} className="text-gray-400 group-hover:text-termo-yellowDark transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all flex-shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 2. Outras Aplicações / Veículos Gerais (Exibidos Abaixo) */}
-            {otherApplications.length > 0 && (
-              <div className={matchedProducts.length > 0 ? 'border-t border-amber-200/60 pt-4 space-y-3' : 'space-y-3'}>
-                {matchedProducts.length > 0 && (
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                    Outras aplicações / Veículos compatíveis:
-                  </p>
-                )}
-                <div className="flex flex-col gap-2">
-                  {otherApplications.map((appText, i) => {
-                    const colonIndex = appText.indexOf(':');
-                    const hasColon = colonIndex > -1;
-                    const isCodeLike = /kit/i.test(appText) || /[0-9]{4}/.test(appText);
-
-                    return (
-                      <div key={i} className="flex items-start gap-3 p-3 bg-white border border-amber-100 rounded-lg shadow-sm">
-                        <div className="mt-0.5">
-                          {isCodeLike ? (
-                            <Settings size={16} className="text-gray-400" />
-                          ) : (
-                            <Car size={16} className="text-gray-400" />
-                          )}
-                        </div>
-                        <div className="text-sm text-termo-dark font-bold leading-tight flex-1">
-                          {hasColon ? (
-                            <>
-                              <span>{appText.substring(0, colonIndex)}:</span>
-                              <span className="font-normal text-gray-600 ml-1">{appText.substring(colonIndex + 1)}</span>
-                            </>
-                          ) : (
-                            <span>{appText}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {matchedProducts.length === 0 && otherApplications.length === 0 && (
-              <p className="text-gray-500 text-sm italic">
-                Aplicação sob consulta técnica para este componente.
-              </p>
-            )}
+            <h2 className="text-lg sm:text-xl font-display font-black text-white leading-snug">
+              {application.aplicacaocatalogo}
+            </h2>
           </div>
 
-          {/* Bloco de Observações e Especificações (Apenas specs do JSON) */}
-          {product.specs && (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
-              <h3 className="text-sm font-bold text-termo-dark uppercase tracking-wider mb-2 flex items-center gap-2">
-                <FileText size={18} className="text-termo-metal" />
-                <span>Observações e Especificações</span>
-              </h3>
-              <div className="p-3.5 bg-white border border-gray-200 rounded-lg text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
-                {formatSpecsAsText()}
-              </div>
-            </div>
-          )}
-
-          {product.material && (
-            <div className="text-xs text-gray-500">
-              <strong>Material base:</strong> {product.material}
-            </div>
-          )}
-        </div>
-
-        {/* Modal Footer */}
-        <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
+            aria-label="Fechar"
+            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors flex-shrink-0"
+          >
+            <X size={22} />
+          </button>
+        </div>
+
+        {/* Body com a lista de componentes */}
+        <div className="overflow-y-auto flex-1 p-5 sm:p-6 space-y-6">
+
+          <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+            <div className="flex items-center gap-2">
+              <Layers size={18} className="text-termo-yellowDark" />
+              <h3 className="text-sm font-black text-termo-dark uppercase tracking-wider">
+                Peças do Conjunto desta Aplicação
+              </h3>
+            </div>
+            {/* Ajuste solicitado: '3 posições' > x peças */}
+            <span className="text-xs font-mono text-gray-500 font-bold">
+              {pieceSlots.length} {pieceSlots.length === 1 ? 'peça' : 'peças'}
+            </span>
+          </div>
+
+          {pieceSlots.length === 0 ? (
+            <div className="text-center py-10 bg-gray-50 rounded-xl border border-gray-200 p-6">
+              <p className="text-sm text-gray-500">Nenhuma informação técnica de peças cadastrada para esta aplicação.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pieceSlots.map((slot, sIdx) => {
+                const currentProduct = slot.standardProduct || slot.products[0];
+                const meta = currentProduct ? extractProductMeta(currentProduct) : null;
+                const dims = currentProduct ? extractDimensions(currentProduct) : [];
+                const cleanName = currentProduct ? getCleanProductName(currentProduct.name) : 'Peça Sinterizada';
+
+                return (
+                  <div key={sIdx} className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-5 space-y-4">
+                    {/* Header do item: 'Lado Padrão: x' e botão de redirecionamento para produtos */}
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-termo-yellow" />
+                        <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-termo-dark">
+                          Lado {slot.title}
+                        </h4>
+                      </div>
+
+                      {/* Botão para enviar o usuário para a página de produtos exibindo os produtos deste lado */}
+                      {slot.products.length > 0 && onViewInProducts && (
+                        <button
+                          type="button"
+                          onClick={() => onViewInProducts([slot.code])}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-termo-dark hover:bg-termo-yellow text-termo-yellow hover:text-termo-dark text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-sm group"
+                        >
+                          <span>Ver produtos deste lado</span>
+                          <ArrowUpRight size={13} className="transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        </button>
+                      )}
+                    </div>
+
+                    {slot.products.length === 0 ? (
+                      <div className="bg-white rounded-lg p-3 border border-gray-200 text-xs text-gray-500 italic flex items-center justify-between gap-2">
+                        <span>Peça cadastrada na aplicação, medidas sob consulta com nossa engenharia.</span>
+                        {slot.code && (
+                          <ProductCodeBadges code={slot.code} codigoligacaoproduto={slot.code} />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-lg p-4 border border-gray-200 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-display font-bold text-termo-dark">
+                              {cleanName}
+                            </span>
+                            <ProductCodeBadges
+                              product={currentProduct}
+                              code={slot.code}
+                              codigoligacaoproduto={slot.code}
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-3 text-xs">
+                            {meta?.material && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-400 uppercase text-[10px] font-bold">Material:</span>
+                                <span className="font-bold text-termo-dark">{meta.material}</span>
+                              </div>
+                            )}
+                            {meta?.pesoliquido && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-400 uppercase text-[10px] font-bold">Peso:</span>
+                                <span className="font-mono font-bold text-termo-dark">{meta.pesoliquido} kg</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Dimensões básicas da peça */}
+                        {dims.length > 0 ? (
+                          <div className="pt-2 border-t border-gray-100">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-1.5 flex items-center gap-1">
+                              <Ruler size={11} className="text-termo-yellowDark" />
+                              Dimensões da Peça (mm)
+                            </span>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {dims.slice(0, 4).map((d, dIdx) => (
+                                <div key={dIdx} className="bg-gray-50 p-2 rounded border border-gray-100 flex flex-col">
+                                  <span className="text-[10px] text-gray-500 truncate" title={d.label}>
+                                    {d.short}
+                                  </span>
+                                  <span className="text-xs font-mono font-black text-termo-dark mt-0.5">
+                                    {d.val}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-gray-400 italic">Cotas dimensionais sob consulta.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Botão no rodapé do modal para ver todos os itens da aplicação na aba produtos */}
+          {hasAnyProducts && onViewInProducts && (
+            <button
+              type="button"
+              onClick={() => {
+                onViewInProducts(application.pieceCodes);
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-termo-yellow hover:bg-termo-yellowDark text-termo-dark font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md mt-4"
+            >
+              <ArrowUpRight size={16} />
+              <span>Ver todos os itens desta aplicação no catálogo de produtos</span>
+            </button>
+          )}
+
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end items-center">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 text-xs uppercase tracking-wider font-black text-gray-600 hover:text-termo-dark hover:bg-gray-200 rounded-lg transition-colors border border-gray-300"
           >
             Fechar
           </button>
-          
-          {navigate && (
-            <button
-              onClick={() => navigate(`product/${product.id}`)}
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-termo-dark text-termo-yellow hover:bg-termo-yellow hover:text-termo-dark font-bold text-sm rounded-lg shadow transition-all duration-200"
-            >
-              <span>Ver Página Completa</span>
-              <ArrowRight size={16} />
-            </button>
-          )}
         </div>
 
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, X, ChevronRight } from 'lucide-react';
 import { PageRoute } from '../types';
 
@@ -20,6 +20,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, navigate }) => {
 
   const navLinks = [
     { name: 'Início', route: PageRoute.HOME },
+    { name: 'Catálogo', route: PageRoute.CATALOG },
     { name: 'A Empresa', route: PageRoute.ABOUT },
   ];
 
@@ -52,6 +53,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, navigate }) => {
       className={`fixed w-full z-50 transition-all duration-300 ${
         scrolled || isOpen ? 'bg-termo-dark shadow-xl py-4' : 'bg-transparent py-6'
       }`}
+      role="navigation"
+      aria-label="Menu principal"
     >
       <div className="container mx-auto px-6 flex justify-between items-center gap-6">
         <div 
@@ -81,6 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, navigate }) => {
                 key={link.name}
                 onClick={() => handleNav(link.route)}
                 className={`${glassBase} ${btnClass}`}
+                aria-current={isActive ? 'page' : undefined}
               >
                 {link.name}
               </button>
@@ -89,24 +93,41 @@ export const Navbar: React.FC<NavbarProps> = ({ currentRoute, navigate }) => {
         </div>
 
         <div className="md:hidden">
-          <button onClick={() => setIsOpen(!isOpen)} className={menuIconClass}>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className={menuIconClass}
+            aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-expanded={isOpen}
+            aria-controls="mobile-nav-menu"
+          >
             {isOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
       </div>
 
       {isOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-termo-dark border-t border-gray-800 flex flex-col p-6 shadow-2xl animate-fade-in-down">
-          {navLinks.map((link) => (
-            <button
-              key={link.name}
-              onClick={() => handleNav(link.route)}
-              className="flex items-center justify-between w-full py-4 text-left text-gray-300 border-b border-gray-800 hover:text-termo-yellow"
-            >
-              <span className="text-lg font-medium">{link.name}</span>
-              <ChevronRight size={16} />
-            </button>
-          ))}
+        <div
+          id="mobile-nav-menu"
+          className="md:hidden absolute top-full left-0 w-full bg-termo-dark border-t border-gray-800 flex flex-col p-6 shadow-2xl animate-fade-in-down"
+          role="menu"
+        >
+          {navLinks.map((link) => {
+            const isActive = currentRoute === link.route;
+            return (
+              <button
+                key={link.name}
+                onClick={() => handleNav(link.route)}
+                className={`flex items-center justify-between w-full py-4 text-left border-b border-gray-800 transition-colors ${
+                  isActive ? 'text-termo-yellow' : 'text-gray-300 hover:text-termo-yellow'
+                }`}
+                role="menuitem"
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <span className="text-lg font-medium">{link.name}</span>
+                <ChevronRight size={16} />
+              </button>
+            );
+          })}
 
         </div>
       )}

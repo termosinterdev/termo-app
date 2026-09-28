@@ -20,8 +20,9 @@ export interface ProductDimensions {
 
 export interface Product {
   id: number;
+  documentId?: string;
   name: string;
-  category: 'Buchas' | 'Engrenagens' | 'Estruturais' | 'Filtros' | 'Outros';
+  category: string;
   description: string;
   material: string;
   price: string;
@@ -49,6 +50,23 @@ export interface Product {
   isFavorite?: boolean;
   isMain?: boolean;
   applied?: string;
+  codigobarra?: string;
+  codigoligacaoproduto?: string;
+  pesoliquido?: string;
+}
+
+export interface ApplicationItem {
+  id: number | string;
+  montadora: string;
+  marca: string;
+  aplicacaocatalogo: string;
+  localaplicacao: string;
+  itemmotriz?: string;
+  itemcoletor?: string;
+  itemintermediario1?: string;
+  itemintermediario2?: string;
+  itemintermediario3?: string;
+  pieceCodes: string[];
 }
 
 export interface Service {

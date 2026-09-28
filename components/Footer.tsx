@@ -56,11 +56,23 @@ export const Footer: React.FC<FooterProps> = ({ navigate }) => {
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={18} className="text-termo-yellow shrink-0" />
-                <span>+55 (11) 3122-1146</span>
+                <a
+                  href="tel:+551131221146"
+                  className="hover:text-white transition-colors"
+                  aria-label="Ligar para +55 (11) 3122-1146"
+                >
+                  +55 (11) 3122-1146
+                </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-termo-yellow shrink-0" />
-                <span>luciano@termosinter.com.br</span>
+                <a
+                  href="mailto:luciano@termosinter.com.br"
+                  className="hover:text-white transition-colors"
+                  aria-label="Enviar email para luciano@termosinter.com.br"
+                >
+                  luciano@termosinter.com.br
+                </a>
               </li>
             </ul>
           </div>
