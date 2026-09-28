@@ -16,6 +16,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_PORT || '18225' }}
           script: |
             cd /var/www/projetos/termo-app
             git remote set-url origin git@github.com:termosinterdev/termo-app.git
